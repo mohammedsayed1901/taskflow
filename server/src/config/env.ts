@@ -22,9 +22,17 @@ const environmentSchema = z.object({
   JWT_SECRET: z.string().min(32, {
     error: 'JWT_SECRET must contain at least 32 characters',
   }),
-  JWT_EXPIRES_IN: z.string().trim().min(1, {
-    error: 'JWT_EXPIRES_IN is required',
-  }),
+  JWT_EXPIRES_IN_SECONDS: z.coerce
+    .number({
+      error: 'JWT_EXPIRES_IN_SECONDS must be a number',
+    })
+    .int()
+    .min(300, {
+      error: 'JWT_EXPIRES_IN_SECONDS must be at least 300',
+    })
+    .max(2_592_000, {
+      error: 'JWT_EXPIRES_IN_SECONDS must not exceed 2592000',
+    }),
   BCRYPT_SALT_ROUNDS: z.coerce.number().int().min(10).max(14).default(12),
 });
 

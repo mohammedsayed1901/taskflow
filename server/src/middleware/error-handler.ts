@@ -33,6 +33,7 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, _request, resp
     response.status(error.statusCode).json({
       success: false,
       message: error.message,
+      ...(error.details !== undefined ? { details: error.details } : {}),
     });
 
     return;
