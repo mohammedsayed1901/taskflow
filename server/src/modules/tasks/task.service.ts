@@ -112,7 +112,7 @@ export async function updateTask(
       $set: input,
     },
     {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }
   ).exec();
