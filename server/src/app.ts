@@ -9,6 +9,7 @@ import { errorHandler } from './middleware/error-handler.js';
 import { notFound } from './middleware/not-found.js';
 import { healthRouter } from './routes/health.routes.js';
 import { authRouter } from './modules/auth/auth.routes.js';
+import { taskRouter } from './modules/tasks/task.routes.js';
 
 const corsOptions: CorsOptions = {
   credentials: true,
@@ -38,6 +39,7 @@ app.use(cookieParser());
 
 app.use('/api', healthRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/tasks', taskRouter);
 
 app.use(notFound);
 app.use(errorHandler);

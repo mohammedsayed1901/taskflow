@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 
-import { validateBody } from '../../middleware/validate-body.js';
+import { validateBody } from '../../middleware/validate-request.js';
 import { getCurrentUser, login, logout, register } from './auth.controller.js';
 import { requireAuthentication } from './auth.middleware.js';
 import { loginBodySchema, registerBodySchema } from './auth.schemas.js';

@@ -4,6 +4,8 @@ declare global {
   namespace Express {
     interface Request {
       user?: PublicUser;
+
+      validated?: Partial<Record<'body' | 'params' | 'query', unknown>>;
     }
   }
 }
