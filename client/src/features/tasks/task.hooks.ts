@@ -1,17 +1,13 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { TaskFilters, TaskListData, TaskStatus } from '../../types/api';
+import type { TaskFilters, TaskListData } from '../../types/api';
 import { createTask, deleteTask, getTasks, updateTask } from './task.api';
 import type { TaskUpdateInput } from './task.schemas';
+import { moveTaskInCachedList, type MoveTaskVariables } from './task-cache';
 
 interface UpdateTaskVariables {
   taskId: string;
   input: TaskUpdateInput;
-}
-
-interface MoveTaskVariables {
-  taskId: string;
-  status: TaskStatus;
 }
 
 export const taskKeys = {
@@ -21,47 +17,6 @@ export const taskKeys = {
     return [...this.all, 'list', filters] as const;
   },
 };
-
-function moveTaskInCachedList(
-  data: TaskListData,
-  variables: MoveTaskVariables,
-  filters: TaskFilters
-): TaskListData {
-  const taskExists = data.tasks.some((task) => task.id === variables.taskId);
-
-  if (!taskExists) {
-    return data;
-  }
-
-  const movesOutsideStatusFilter =
-    filters.status !== undefined && filters.status !== variables.status;
-
-  if (movesOutsideStatusFilter) {
-    const total = Math.max(0, data.pagination.total - 1);
-
-    return {
-      ...data,
-      tasks: data.tasks.filter((task) => task.id !== variables.taskId),
-      pagination: {
-        ...data.pagination,
-        total,
-        pages: Math.ceil(total / data.pagination.limit),
-      },
-    };
-  }
-
-  return {
-    ...data,
-    tasks: data.tasks.map((task) =>
-      task.id === variables.taskId
-        ? {
-            ...task,
-            status: variables.status,
-          }
-        : task
-    ),
-  };
-}
 
 export function useTasks(filters: TaskFilters) {
   return useQuery({
