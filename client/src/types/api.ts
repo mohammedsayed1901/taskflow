@@ -39,3 +39,16 @@ export interface ValidationDetail {
   field: string;
   message: string;
 }
+
+export const TASK_SORTS = ['dueDate', '-dueDate', 'createdAt', '-createdAt'] as const;
+
+export type TaskSort = (typeof TASK_SORTS)[number];
+
+export interface TaskFilters {
+  search?: string;
+  status?: TaskStatus;
+  priority?: TaskPriority;
+  page: number;
+  limit: number;
+  sort: TaskSort;
+}
