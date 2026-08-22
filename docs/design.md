@@ -122,22 +122,16 @@ flowchart LR
 - React is compiled into static files.
 - Express serves the compiled React application.
 - Express handles all `/api` routes.
-- The application uses a single Render HTTPS origin.
-- MongoDB Atlas stores production data.
 - Authentication cookies are Secure.
-- Secrets are configured through Render environment variables.
 
 ```text
 Browser
    │
    │ HTTPS
    ▼
-Render Node service
+Hosting Service
    ├── /api/* → Express routes
    └── /*      → React production files
-                    │
-                    ▼
-               MongoDB Atlas
 ```
 
 ## Database design
@@ -371,7 +365,7 @@ Request:
 }
 ```
 
-### PATCH `/api/tasks/:id`
+### PATCH `/api/tasks/:taskId`
 
 Request:
 
@@ -416,7 +410,7 @@ Task responses contain `id`, `title`, `description`, `status`, `priority`,
 
 They do not expose `owner`, `_id`, or `__v`.
 
-### DELETE `/api/tasks/:id`
+### DELETE `/api/tasks/:taskId`
 
 **Success: 204 No Content**
 

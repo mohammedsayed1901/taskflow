@@ -23,7 +23,8 @@ TaskFlow is a full-stack task management application built with the MERN stack a
 
 - TypeScript across the frontend and backend
 - Drag and drop between Kanban status columns
-- Optimistic task-status updates with rollback on API failure
+- Optimistic task cache transformations
+- Cache behavior when moving tasks outside an active status filter
 - API integration tests
 - Frontend validation and cache-update tests
 - Pagination and sorting
@@ -161,7 +162,7 @@ Copy the example environment file.
 On Windows PowerShell:
 
 ```powershell
-Copy-Item .\.env.example .\.env
+Copy-Item .\server\.env.example .\server\.env
 ```
 
 On macOS or Linux:
@@ -187,14 +188,6 @@ JWT_SECRET=replace-with-a-random-secret-containing-at-least-32-characters
 JWT_EXPIRES_IN_SECONDS=604800
 BCRYPT_SALT_ROUNDS=12
 TRUST_PROXY=false
-```
-
-Generate a suitable development secret in PowerShell:
-
-```powershell
--join ((48..57) + (65..90) + (97..122) |
-  Get-Random -Count 64 |
-  ForEach-Object { [char]$_ })
 ```
 
 ### 4. Start MongoDB
@@ -345,7 +338,8 @@ The frontend tests cover:
 
 - Task form validation and normalization
 - Optimistic cache updates
-- Status-update rollback behavior
+- Optimistic task cache transformations
+- Cache behavior when moving tasks outside an active status filter
 
 Before submitting a change, run:
 
@@ -356,6 +350,8 @@ npm run lint
 npm run format:check
 npm run build
 ```
+
+Backend integration tests require MongoDB on 127.0.0.1:27017. They use and clean the dedicated taskflow_test database. GitHub Actions provides a disposable MongoDB service.
 
 ## Continuous Integration
 
@@ -398,4 +394,4 @@ its architecture, security decisions, application behavior, and code.
 - **Repository:** https://github.com/mohammedsayed1901/taskflow.git
 - **Live demo:** Not deployed yet
 - **Test account:** Not required for local review; user registration is enabled
-- **Actual time spent:** In progress; final total will be provided at submission
+- **Actual time spent:** 31 hours
