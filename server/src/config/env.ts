@@ -18,7 +18,8 @@ const environmentSchema = z.object({
       z.url({
         error: 'CLIENT_ORIGIN must be a valid URL',
       })
-    ),
+    )
+    .transform((value) => new URL(value).origin),
   JWT_SECRET: z.string().min(32, {
     error: 'JWT_SECRET must contain at least 32 characters',
   }),
@@ -34,6 +35,10 @@ const environmentSchema = z.object({
       error: 'JWT_EXPIRES_IN_SECONDS must not exceed 2592000',
     }),
   BCRYPT_SALT_ROUNDS: z.coerce.number().int().min(10).max(14).default(12),
+  TRUST_PROXY: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((value) => value === 'true'),
 });
 
 const environmentResult = environmentSchema.safeParse(process.env);
