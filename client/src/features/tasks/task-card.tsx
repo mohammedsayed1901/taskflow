@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { AlertCircle, CalendarDays, Pencil, Trash2 } from 'lucide-react';
 
 import type { Task } from '../../types/api';
@@ -37,21 +38,26 @@ interface TaskCardProps {
   task: Task;
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
+  dragHandle?: ReactNode;
 }
 
-export function TaskCard({ task, onEdit, onDelete }: TaskCardProps) {
+export function TaskCard({ task, onEdit, onDelete, dragHandle }: TaskCardProps) {
   const overdue = isTaskOverdue(task);
 
   return (
     <article className="task-card">
-      <div className="task-card-badges">
-        <span className="task-status" data-status={task.status}>
-          {statusLabels[task.status]}
-        </span>
+      <div className="task-card-top">
+        <div className="task-card-badges">
+          <span className="task-status" data-status={task.status}>
+            {statusLabels[task.status]}
+          </span>
 
-        <span className="task-priority" data-priority={task.priority}>
-          {priorityLabels[task.priority]}
-        </span>
+          <span className="task-priority" data-priority={task.priority}>
+            {priorityLabels[task.priority]}
+          </span>
+        </div>
+
+        {dragHandle}
       </div>
 
       <div className="task-card-content">

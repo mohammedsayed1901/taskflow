@@ -80,11 +80,11 @@ export function TaskFormDialog({ open, task, onClose }: TaskFormDialogProps) {
     }
 
     reset(getDefaultValues(task));
-    setFormError(null);
   }, [open, reset, task]);
 
   function requestClose(): void {
     if (!isBusy) {
+      setFormError(null);
       onClose();
     }
   }

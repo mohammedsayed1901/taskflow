@@ -1,12 +1,17 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import type { TaskFilters } from '../../types/api';
+import type { TaskFilters, TaskListData, TaskStatus } from '../../types/api';
 import { createTask, deleteTask, getTasks, updateTask } from './task.api';
-import type { TaskFormInput } from './task.schemas';
+import type { TaskUpdateInput } from './task.schemas';
 
 interface UpdateTaskVariables {
   taskId: string;
-  input: TaskFormInput;
+  input: TaskUpdateInput;
+}
+
+interface MoveTaskVariables {
+  taskId: string;
+  status: TaskStatus;
 }
 
 export const taskKeys = {
@@ -16,6 +21,47 @@ export const taskKeys = {
     return [...this.all, 'list', filters] as const;
   },
 };
+
+function moveTaskInCachedList(
+  data: TaskListData,
+  variables: MoveTaskVariables,
+  filters: TaskFilters
+): TaskListData {
+  const taskExists = data.tasks.some((task) => task.id === variables.taskId);
+
+  if (!taskExists) {
+    return data;
+  }
+
+  const movesOutsideStatusFilter =
+    filters.status !== undefined && filters.status !== variables.status;
+
+  if (movesOutsideStatusFilter) {
+    const total = Math.max(0, data.pagination.total - 1);
+
+    return {
+      ...data,
+      tasks: data.tasks.filter((task) => task.id !== variables.taskId),
+      pagination: {
+        ...data.pagination,
+        total,
+        pages: Math.ceil(total / data.pagination.limit),
+      },
+    };
+  }
+
+  return {
+    ...data,
+    tasks: data.tasks.map((task) =>
+      task.id === variables.taskId
+        ? {
+            ...task,
+            status: variables.status,
+          }
+        : task
+    ),
+  };
+}
 
 export function useTasks(filters: TaskFilters) {
   return useQuery({
@@ -48,6 +94,50 @@ export function useUpdateTaskMutation() {
     },
 
     onSuccess() {
+      return queryClient.invalidateQueries({
+        queryKey: taskKeys.all,
+      });
+    },
+  });
+}
+
+export function useMoveTaskMutation(filters: TaskFilters) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn({ taskId, status }: MoveTaskVariables) {
+      return updateTask(taskId, { status });
+    },
+
+    async onMutate(variables) {
+      const queryKey = taskKeys.list(filters);
+
+      await queryClient.cancelQueries({
+        queryKey,
+      });
+
+      const previousData = queryClient.getQueryData<TaskListData>(queryKey);
+
+      if (previousData) {
+        queryClient.setQueryData<TaskListData>(
+          queryKey,
+          moveTaskInCachedList(previousData, variables, filters)
+        );
+      }
+
+      return {
+        queryKey,
+        previousData,
+      };
+    },
+
+    onError(_error, _variables, context) {
+      if (context?.previousData) {
+        queryClient.setQueryData(context.queryKey, context.previousData);
+      }
+    },
+
+    onSettled() {
       return queryClient.invalidateQueries({
         queryKey: taskKeys.all,
       });

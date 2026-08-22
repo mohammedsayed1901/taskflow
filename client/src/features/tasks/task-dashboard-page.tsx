@@ -10,16 +10,16 @@ import {
   SlidersHorizontal,
   X,
 } from 'lucide-react';
-import { type FormEvent, useEffect, useMemo, useState } from 'react';
+import { type FormEvent, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import type { Task, TaskFilters, TaskPriority, TaskSort, TaskStatus } from '../../types/api';
+import { TaskBoard } from './components/task-board';
 import { TASK_PRIORITIES, TASK_SORTS, TASK_STATUSES } from '../../types/api';
 import { useCurrentUser, useLogoutMutation } from '../auth/auth.hooks';
-import { TaskCard } from './task-card';
 import { DeleteTaskDialog } from './delete-task-dialog';
 import { TaskFormDialog } from './task-form-dialog';
-import { useTasks } from './task.hooks';
+import { useMoveTaskMutation, useTasks } from './task.hooks';
 import './tasks.css';
 
 const TASKS_PER_PAGE = 12;
@@ -77,6 +77,54 @@ function DashboardSkeleton() {
   );
 }
 
+interface TaskSearchFormProps {
+  initialValue: string;
+  onSearch: (value: string) => void;
+}
+
+function TaskSearchForm({ initialValue, onSearch }: TaskSearchFormProps) {
+  const [searchDraft, setSearchDraft] = useState(initialValue);
+
+  function submitSearch(event: FormEvent<HTMLFormElement>): void {
+    event.preventDefault();
+    onSearch(searchDraft.trim());
+  }
+
+  return (
+    <form className="task-search" onSubmit={submitSearch}>
+      <Search aria-hidden="true" size={19} />
+
+      <input
+        aria-label="Search tasks by title"
+        onChange={(event) => {
+          setSearchDraft(event.target.value);
+        }}
+        placeholder="Search tasks by title"
+        type="search"
+        value={searchDraft}
+      />
+
+      {searchDraft && (
+        <button
+          aria-label="Clear search"
+          className="icon-button"
+          onClick={() => {
+            setSearchDraft('');
+            onSearch('');
+          }}
+          type="button"
+        >
+          <X aria-hidden="true" size={17} />
+        </button>
+      )}
+
+      <button className="search-submit" type="submit">
+        Search
+      </button>
+    </form>
+  );
+}
+
 export function TaskDashboardPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -86,17 +134,13 @@ export function TaskDashboardPage() {
 
   const filters = useMemo(() => parseFilters(searchParams), [searchParams]);
 
-  const [searchDraft, setSearchDraft] = useState(filters.search ?? '');
+  const moveTaskMutation = useMoveTaskMutation(filters);
 
   const [taskFormOpen, setTaskFormOpen] = useState(false);
 
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
   const [deletingTask, setDeletingTask] = useState<Task | null>(null);
-
-  useEffect(() => {
-    setSearchDraft(filters.search ?? '');
-  }, [filters.search]);
 
   const tasksQuery = useTasks(filters);
   const user = currentUser.data;
@@ -135,13 +179,7 @@ export function TaskDashboardPage() {
     });
   }
 
-  function submitSearch(event: FormEvent<HTMLFormElement>): void {
-    event.preventDefault();
-    updateFilter('search', searchDraft.trim());
-  }
-
   function clearFilters(): void {
-    setSearchDraft('');
     setSearchParams({});
   }
 
@@ -158,6 +196,13 @@ export function TaskDashboardPage() {
   function closeTaskForm(): void {
     setTaskFormOpen(false);
     setEditingTask(null);
+  }
+
+  function handleMoveTask(taskId: string, status: TaskStatus): void {
+    moveTaskMutation.mutate({
+      taskId,
+      status,
+    });
   }
 
   async function handleLogout(): Promise<void> {
@@ -237,37 +282,13 @@ export function TaskDashboardPage() {
         </section>
 
         <section aria-label="Search and filter tasks" className="task-toolbar">
-          <form className="task-search" onSubmit={submitSearch}>
-            <Search aria-hidden="true" size={19} />
-
-            <input
-              aria-label="Search tasks by title"
-              onChange={(event) => {
-                setSearchDraft(event.target.value);
-              }}
-              placeholder="Search tasks by title"
-              type="search"
-              value={searchDraft}
-            />
-
-            {searchDraft && (
-              <button
-                aria-label="Clear search"
-                className="icon-button"
-                onClick={() => {
-                  setSearchDraft('');
-                  updateFilter('search', '');
-                }}
-                type="button"
-              >
-                <X aria-hidden="true" size={17} />
-              </button>
-            )}
-
-            <button className="search-submit" type="submit">
-              Search
-            </button>
-          </form>
+          <TaskSearchForm
+            key={searchParams.toString()}
+            initialValue={filters.search ?? ''}
+            onSearch={(value) => {
+              updateFilter('search', value);
+            }}
+          />
 
           <div className="task-filters">
             <SlidersHorizontal aria-hidden="true" className="filter-icon" size={19} />
@@ -396,16 +417,13 @@ export function TaskDashboardPage() {
 
         {taskData && taskData.tasks.length > 0 && (
           <>
-            <section aria-label="Tasks" className="task-grid">
-              {taskData.tasks.map((task) => (
-                <TaskCard
-                  key={task.id}
-                  onDelete={setDeletingTask}
-                  onEdit={openEditDialog}
-                  task={task}
-                />
-              ))}
-            </section>
+            <TaskBoard
+              tasks={taskData.tasks}
+              disabled={moveTaskMutation.isPending}
+              onMove={handleMoveTask}
+              onEdit={openEditDialog}
+              onDelete={setDeletingTask}
+            />
 
             {taskData.pagination.pages > 1 && (
               <nav aria-label="Task pagination" className="task-pagination">
@@ -446,6 +464,12 @@ export function TaskDashboardPage() {
             Sign out failed. Please try again.
           </p>
         )}
+
+        {moveTaskMutation.isError ? (
+          <div className="feedback feedback-error" role="alert">
+            We could not update the task status. Please try again.
+          </div>
+        ) : null}
       </div>
 
       <TaskFormDialog onClose={closeTaskForm} open={taskFormOpen} task={editingTask} />

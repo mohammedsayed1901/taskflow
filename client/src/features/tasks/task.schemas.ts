@@ -58,3 +58,5 @@ export const taskFormSchema = z.strictObject({
 });
 
 export type TaskFormInput = z.infer<typeof taskFormSchema>;
+
+export type TaskUpdateInput = Partial<TaskFormInput>;

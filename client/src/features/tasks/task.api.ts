@@ -1,6 +1,6 @@
 import { apiRequest } from '../../lib/api-client';
 import type { Task, TaskFilters, TaskListData } from '../../types/api';
-import type { TaskFormInput } from './task.schemas';
+import type { TaskFormInput, TaskUpdateInput } from './task.schemas';
 
 interface TaskData {
   task: Task;
@@ -37,7 +37,7 @@ export async function createTask(input: TaskFormInput): Promise<Task> {
   return data.task;
 }
 
-export async function updateTask(taskId: string, input: TaskFormInput): Promise<Task> {
+export async function updateTask(taskId: string, input: TaskUpdateInput): Promise<Task> {
   const data = await apiRequest<TaskData>(`/tasks/${taskId}`, {
     method: 'PATCH',
     body: input,
